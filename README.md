@@ -157,18 +157,18 @@ Secret-named values are masked before comparing, so a changed password shows as
 ## Tests
 
 ```bash
-python3 tests/test_decrypt.py        # no pytest needed; 9 tests
-python3 tools/router-dump.py --selftest
-python3 tools/config-diff.py --selftest
-python3 tools/fetch-config.py --selftest
-python3 huawei-config.py --selftest
+python3 tests/test_all.py        # runs everything, no pytest needed
 ```
 
-The decryptor tests cover a round-trip, all AES-pad residues, HMAC-mismatch,
-wrong-key, malformed headers, and a known-answer test that pins the decoder to a
-real header block (which decodes to the public ISP constant — no user data).
-Each other tool ships a `--selftest`; CI (`.github/workflows/test.yml`) runs them
-all on every push.
+The decryptor has a classic external test file (`tests/test_decrypt.py`, 9
+tests): a round-trip, all AES-pad residues, HMAC-mismatch, wrong-key, malformed
+headers, and a known-answer test that pins the decoder to a real header block
+(which decodes to the public ISP constant — no user data).
+
+The other tools carry their tests inside themselves as `--selftest` (their
+hyphenated file names can't be imported as modules), so `tests/test_all.py`
+runs each as a subprocess. CI (`.github/workflows/test.yml`) runs the same
+runner on every push.
 
 ## Prior art / could-not-verify
 

@@ -11,13 +11,5 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: decryptor tests
-        run: python tests/test_decrypt.py
-      - name: router-dump selftest
-        run: python tools/router-dump.py --selftest
-      - name: config-diff selftest
-        run: python tools/config-diff.py --selftest
-      - name: fetch-config selftest
-        run: python tools/fetch-config.py --selftest
-      - name: huawei-config selftest
-        run: python huawei-config.py --selftest
+      - name: run the whole suite
+        run: python tests/test_all.py
