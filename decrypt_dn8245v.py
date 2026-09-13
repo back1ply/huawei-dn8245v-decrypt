@@ -48,6 +48,8 @@ PWD_KEY_MODE2 = bytes.fromhex(
 
 # Cap on decompressed output: refuse a gzip bomb before it fills memory.
 MAX_PLAINTEXT = 64 << 20  # 64 MiB; real configs are a few hundred KB
+# Cap on the encrypted input we read at all: a real backup is tens of KB.
+MAX_INPUT = 64 << 20      # bound f.read() so a huge .bin can't OOM before validation
 
 
 class ContainerError(ValueError):
@@ -154,7 +156,9 @@ def decompress_payload(dec):
 
 def decrypt(path_in, path_out):
     with open(path_in, "rb") as f:
-        data = f.read()
+        data = f.read(MAX_INPUT + 1)
+    if len(data) > MAX_INPUT:
+        raise ContainerError("Input larger than 64 MiB; not a DN8245V config backup.")
 
     fixed_str, salt, ct, sig = parse_container(data)
     print(f"[+] recovered ISP fixed_str: {fixed_str.decode('latin1', 'ignore')!r}")
