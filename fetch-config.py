@@ -30,7 +30,8 @@ import urllib.request
 RAND_URL = "https://{r}/asp/GetRandCount.asp"
 LOGIN_URL = "https://{r}/login.cgi"
 CFG_PAGE = "html/ssmp/cfgfile/cfgfile.asp"
-DOWNLOAD_URL = "https://{r}/cfgfiledown.cgi?&RequestFile=" + CFG_PAGE + "&x.X_HW_Token={t}"
+# The download must be POST with the token in the body; a GET here 403s.
+DOWNLOAD_URL = "https://{r}/cfgfiledown.cgi?&RequestFile=" + CFG_PAGE
 TOKEN_RE = re.compile(r'name="onttoken"[^>]*value="([0-9a-fA-F]{16,})"')
 
 
@@ -49,7 +50,8 @@ def fetch(out_path):
 
     token = _page_token(opener, router)
     print(f"[+] page token length: {len(token)}")
-    blob = _get(opener, DOWNLOAD_URL.format(r=router, t=token), referer=_ref(router))
+    blob = _post(opener, DOWNLOAD_URL.format(r=router),
+                 {"x.X_HW_Token": token}, referer=_ref(router))
     _reject_if_not_config(blob)
 
     with open(out_path, "wb") as f:
