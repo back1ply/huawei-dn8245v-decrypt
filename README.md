@@ -222,10 +222,10 @@ does and doesn't cover.
 - mkst/zte-config-utility — [issue #139 (DG8245V-10 super-admin)](https://github.com/mkst/zte-config-utility/issues/139)
 - Reverse Engineering SE — [DG8045 re-encrypt / signature, 2026](https://reverseengineering.stackexchange.com/questions/33737/)
 
-**The private "unlock" scene** — demos a paid tool; no method or key published
-- YouTube — [«فك تشفير جميع راوترات هواوي» / "Decrypt all Huawei routers"](https://www.youtube.com/watch?v=-2sU4H805Rk)
-- YouTube — [HG8245 decrypt/encrypt hw_ctree (old aescrypt2, GPON only)](https://www.youtube.com/watch?v=4cGYuwjDGO4)
-- Facebook — [unlockWMFI: unlock via config file (seller)](https://www.facebook.com/unlockWMFI/videos/1351743516648316/)
+**The private "unlock" scene** — sold as a service; no config-decrypt method or key is published (both video transcripts were checked)
+- YouTube — ["Decrypt all Huawei routers"](https://www.youtube.com/watch?v=-2sU4H805Rk) — despite the title, it's **HG630 SIM-unlocking** via an online IMEI code service, *not* config decryption
+- YouTube — [HG8245 decrypt/encrypt hw_ctree](https://www.youtube.com/watch?v=4cGYuwjDGO4) — the **old aescrypt2** (fixed key, GPON models only)
+- Facebook — [unlockWMFI seller ad](https://www.facebook.com/unlockWMFI/videos/1351743516648316/) — pitches flashing or a "system hack"; no method shown
 
 ## Credits
 
