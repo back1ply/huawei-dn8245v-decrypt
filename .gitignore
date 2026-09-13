@@ -2,6 +2,7 @@
 *.bin
 *.cfg
 *.xml
+router-snapshot.txt
 secrets*
 hw_ctree*
 *config-backup*

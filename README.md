@@ -76,6 +76,25 @@ XML-escaped inside the config, so unescape the string (`html.unescape`) **before
 passing it to `decode_mode2()`; the decoder deliberately does not unescape (that
 would corrupt the raw header block).
 
+## Read the config (`router-dump.py`)
+
+Once you have the plaintext XML, `router-dump.py` prints it as readable sections
+instead of 280+ raw tags:
+
+```bash
+python3 router-dump.py --file config.xml            # all sections
+python3 router-dump.py --file config.xml wifi wan   # just the ones you name
+python3 router-dump.py --list                        # section names
+python3 router-dump.py --file config.xml --full      # 100% snapshot to a text file
+```
+
+Sections: `system wifi wan vlan dhcp dns ports devices users qos voip ipv6
+parental remote alg iptv wifiextra usb security firewall time acs`.
+
+Safe by construction: sections read only non-secret attributes, and `--full`
+redacts every secret-named attribute across the whole tree — so WiFi keys, PPPoE
+passwords, and user hashes are never printed.
+
 ## Tests
 
 ```bash
