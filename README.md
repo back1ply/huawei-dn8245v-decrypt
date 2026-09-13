@@ -95,6 +95,19 @@ Safe by construction: sections read only non-secret attributes, and `--full`
 redacts every secret-named attribute across the whole tree — so WiFi keys, PPPoE
 passwords, and user hashes are never printed.
 
+## Compare two configs (`config-diff.py`)
+
+See exactly what changed between two decrypted configs — handy for "what did
+this toggle do?" (dump, change one thing, dump again, diff) or spotting what a
+firmware update rewrote:
+
+```bash
+python3 config-diff.py old.xml new.xml
+```
+
+Secret-named values are masked before comparing, so a changed password shows as
+`(secret changed)`, never the value.
+
 ## Tests
 
 ```bash
