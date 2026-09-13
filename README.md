@@ -201,6 +201,14 @@ This repo only **decrypts** — it does not re-sign.
 Collected so nobody has to re-search this. See **Prior art** above for what each
 does and doesn't cover.
 
+**Related decryptors & tools (GitHub)**
+- [Jakiboy/Hwdecode](https://github.com/Jakiboy/Hwdecode) — `$2` field-password decoder (targets DG8245V-10)
+- [Jakiboy/Ratr](https://github.com/Jakiboy/Ratr) — router config extractor (Huawei / ZTE)
+- [coolrecep/Huawei-ONT-Firmware-Reverse-Engineering-Research](https://github.com/coolrecep/Huawei-ONT-Firmware-Reverse-Engineering-Research) — V500R022 container + 8192× SHA-256 KDF
+- [minanagehsalalma/huawei-dg8045-hg630-hg633-Config-file-decryption-and-password-decode](https://github.com/minanagehsalalma/huawei-dg8045-hg630-hg633-Config-file-decryption-and-password-decode) — DG8045 / HG630 / HG633 config decrypt + password decode
+- [palmerc/AESCrypt2](https://github.com/palmerc/AESCrypt2) — aescrypt2 emulation (HG8245 family)
+- [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility) — ZTE config.bin encode/decode (referenced by DG8245V-10 threads)
+
 **Method write-ups**
 - devilinside.me — [gzip → AES → HMAC container, aescrypt2 emulation](https://devilinside.me/blogs/decrypt-configuration-files-exactly-how-huawei-ont-does)
 - Fayaru — [Huawei config password encryption + the field key](https://blog.fayaru.me/posts/huawei_router_config/)
