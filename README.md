@@ -174,13 +174,23 @@ constant — no user data).
 
 ## Prior art / could-not-verify
 
-I could not rule out that this is already documented in:
+**Checked (2026):** the Hak5 thread *"How to decrypt hw_ctree of Huawei
+DN8245V-56?"*
+([forums.hak5.org/topic/57207](https://forums.hak5.org/topic/57207-how-to-decrypt-hw_ctree-of-huawei-dn8245v-56/))
+turned out to be an **unanswered, now-archived question** — no solution was ever
+posted. The exact WE/TE Data `fixed_str` above still returns **zero** public
+search hits.
 
-- The Hak5 thread *"How to decrypt hw_ctree of Huawei DN8245V-56?"*
-  (`forums.hak5.org/topic/57207` — Cloudflare-blocked during research).
-- Arabic "Prografor" videos claiming to decrypt dn8245v/dg8245v.
+**Still not chased down:** Arabic "Prografor" videos that claim to decrypt
+dn8245v/dg8245v — video content I couldn't verify. Check those before treating
+any of this as first-published.
 
-Check those before treating any of this as first-published.
+**Note — re-encryption is a separate, still-open problem.** Modifying a backup
+and getting the router to accept it back is unsolved publicly: the container
+carries an integrity/signature field nobody has reproduced (see this 2026 DG8045
+write-up:
+[reverseengineering.stackexchange.com/q/33737](https://reverseengineering.stackexchange.com/questions/33737/)).
+This repo only **decrypts** — it does not re-sign.
 
 ## Credits
 
