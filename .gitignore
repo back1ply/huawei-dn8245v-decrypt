@@ -1,0 +1,9 @@
+# never commit real router data
+*.bin
+*.cfg
+*.xml
+secrets*
+hw_ctree*
+*config-backup*
+__pycache__/
+*.pyc
