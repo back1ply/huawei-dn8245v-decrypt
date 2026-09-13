@@ -66,6 +66,15 @@ fetch-config.py  ->  decrypt_dn8245v.py  ->  router-dump.py  ->  config-diff.py
    download            decrypt                read              compare two
 ```
 
+Or drive all four from one entry point:
+
+```bash
+python3 huawei-config.py fetch    config.bin
+python3 huawei-config.py decrypt  config.bin config.xml
+python3 huawei-config.py dump     --file config.xml
+python3 huawei-config.py diff     old.xml new.xml
+```
+
 ## Download it from the router (`fetch-config.py`)
 
 Pulls the encrypted backup straight off the router over the LAN, so you don't
