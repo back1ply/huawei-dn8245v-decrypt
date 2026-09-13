@@ -57,7 +57,7 @@ def fetch(out_path):
     with open(out_path, "wb") as f:
         f.write(blob)
     print(f"[+] wrote {out_path} ({len(blob)} bytes)")
-    print(f"    next: python3 decrypt_dn8245v.py {out_path} config.xml")
+    print(f"    next: python3 huawei-config.py decrypt {out_path} config.xml")
 
 
 def _login(opener, router, user, password):

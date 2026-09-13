@@ -15,6 +15,7 @@ import hashlib
 import hmac
 import os
 import struct
+import sys
 import tempfile
 
 try:
@@ -22,6 +23,8 @@ try:
 except ModuleNotFoundError:
     from Cryptodome.Cipher import AES
 
+# the tool lives in ../tools relative to this test file
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 import decrypt_dn8245v as m
 
 

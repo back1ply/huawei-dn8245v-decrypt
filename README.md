@@ -75,14 +75,29 @@ python3 huawei-config.py dump     --file config.xml
 python3 huawei-config.py diff     old.xml new.xml
 ```
 
+## Repo layout
+
+```
+huawei-config.py        # unified entry point (fetch|decrypt|dump|diff)
+tools/
+  fetch-config.py       # download the encrypted backup from the router
+  decrypt_dn8245v.py    # decrypt it to plaintext XML
+  router-dump.py        # print the settings as readable sections
+  config-diff.py        # compare two decrypted configs
+tests/
+  test_decrypt.py       # decryptor tests (each tool also has --selftest)
+```
+
+The four tools also run standalone (`python3 tools/<name>.py ...`).
+
 ## Download it from the router (`fetch-config.py`)
 
 Pulls the encrypted backup straight off the router over the LAN, so you don't
 have to click through the web UI:
 
 ```bash
-ROUTER_PASS='youradminpw' python3 fetch-config.py config.bin
-python3 fetch-config.py config.bin            # or omit ROUTER_PASS to be prompted
+ROUTER_PASS='youradminpw' python3 tools/fetch-config.py config.bin
+python3 tools/fetch-config.py config.bin       # or omit ROUTER_PASS to be prompted
 ```
 
 Environment: `ROUTER_IP` (default `192.168.1.1`), `ROUTER_USER` (default `admin`),
@@ -93,8 +108,8 @@ does and is never logged or passed on the command line. Device-specific (drives
 ## Install & use
 
 ```bash
-pip install -r requirements.txt          # pycryptodome
-python3 decrypt_dn8245v.py  config.bin  config.xml
+pip install -r requirements.txt          # pycryptodome (only the decryptor needs it)
+python3 tools/decrypt_dn8245v.py  config.bin  config.xml
 ```
 
 `config.bin` is the encrypted configuration backup the router's web UI produces
@@ -113,10 +128,10 @@ Once you have the plaintext XML, `router-dump.py` prints it as readable sections
 instead of 280+ raw tags:
 
 ```bash
-python3 router-dump.py --file config.xml            # all sections
-python3 router-dump.py --file config.xml wifi wan   # just the ones you name
-python3 router-dump.py --list                        # section names
-python3 router-dump.py --file config.xml --full      # 100% snapshot to a text file
+python3 tools/router-dump.py --file config.xml            # all sections
+python3 tools/router-dump.py --file config.xml wifi wan   # just the ones you name
+python3 tools/router-dump.py --list                        # section names
+python3 tools/router-dump.py --file config.xml --full      # 100% snapshot to a text file
 ```
 
 Sections: `system wifi wan vlan dhcp dns ports devices users qos voip ipv6
@@ -133,7 +148,7 @@ this toggle do?" (dump, change one thing, dump again, diff) or spotting what a
 firmware update rewrote:
 
 ```bash
-python3 config-diff.py old.xml new.xml
+python3 tools/config-diff.py old.xml new.xml
 ```
 
 Secret-named values are masked before comparing, so a changed password shows as
@@ -142,12 +157,18 @@ Secret-named values are masked before comparing, so a changed password shows as
 ## Tests
 
 ```bash
-python3 test_decrypt.py        # no pytest needed; 9 tests
+python3 tests/test_decrypt.py        # no pytest needed; 9 tests
+python3 tools/router-dump.py --selftest
+python3 tools/config-diff.py --selftest
+python3 tools/fetch-config.py --selftest
+python3 huawei-config.py --selftest
 ```
 
-Covers a round-trip, all AES-pad residues, HMAC-mismatch, wrong-key, malformed
-headers, and one known-answer test that pins the decoder against a real header
-block (which decodes to the public ISP constant — no user data).
+The decryptor tests cover a round-trip, all AES-pad residues, HMAC-mismatch,
+wrong-key, malformed headers, and a known-answer test that pins the decoder to a
+real header block (which decodes to the public ISP constant — no user data).
+Each other tool ships a `--selftest`; CI (`.github/workflows/test.yml`) runs them
+all on every push.
 
 ## Prior art / could-not-verify
 

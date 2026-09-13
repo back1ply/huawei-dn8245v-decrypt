@@ -11,10 +11,13 @@ tools stay runnable on their own too.
 
     python3 huawei-config.py --selftest
 """
+import contextlib
+import io
 import os
 import subprocess
 import sys
 
+TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 TOOLS = {
     "fetch": "fetch-config.py",
     "decrypt": "decrypt_dn8245v.py",
@@ -28,16 +31,17 @@ def main(argv):
         print(__doc__)
         print("commands:", ", ".join(TOOLS))
         return 0 if argv[:1] in (["-h"], ["--help"]) else 2
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), TOOLS[argv[0]])
+    script = os.path.join(TOOLS_DIR, TOOLS[argv[0]])
     return subprocess.call([sys.executable, script, *argv[1:]])
 
 
 def _selftest():
-    assert set(TOOLS) == {"fetch", "decrypt", "dump", "diff"}
-    here = os.path.dirname(os.path.abspath(__file__))
     for filename in TOOLS.values():
-        assert os.path.exists(os.path.join(here, filename)), f"missing tool: {filename}"
-    assert main(["nonsense"]) == 2          # unknown command -> usage + exit 2
+        assert os.path.exists(os.path.join(TOOLS_DIR, filename)), f"missing tool: {filename}"
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert main(["nonsense"]) == 2          # unknown command -> usage + exit 2
+    assert "commands:" in buf.getvalue()        # and it printed the usage
     print("selftest ok")
 
 
