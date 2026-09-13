@@ -9,6 +9,7 @@ tools stay runnable on their own too.
     python3 huawei_config.py dump     --file config.xml wifi wan
     python3 huawei_config.py diff     old.xml new.xml
 """
+
 import os
 import subprocess
 import sys

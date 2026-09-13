@@ -11,6 +11,7 @@ Usage:
 Secret-named attributes are masked to *** before comparing, so a changed
 password shows as "(secret changed)" -- never the value.
 """
+
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -27,13 +28,15 @@ def diff(old_path, new_path):
     _print_group("ADDED (only in new)", added, lambda k, v: f"  {k} = {v}")
     _print_group("REMOVED (only in old)", removed, lambda k, v: f"  {k} = {v}")
     total = len(changed) + len(added) + len(removed)
-    print(f"\n{total} difference(s): {len(changed)} changed, "
-          f"{len(added)} added, {len(removed)} removed")
+    print(
+        f"\n{total} difference(s): {len(changed)} changed, "
+        f"{len(added)} added, {len(removed)} removed"
+    )
     return total
 
 
 def _is_secret(key):
-    return bool(SECRET_NAME.search(key.rsplit("@", 1)[-1]))   # match the attr, not the path
+    return bool(SECRET_NAME.search(key.rsplit("@", 1)[-1]))  # match the attr, not the path
 
 
 def compare(old, new):
@@ -46,7 +49,9 @@ def compare(old, new):
             added[key] = MASK if _is_secret(key) else new[key]
         elif old[key] != new[key]:
             # detected on the real values, but never report a secret's contents
-            changed[key] = ("(secret)", "(secret changed)") if _is_secret(key) else (old[key], new[key])
+            changed[key] = (
+                ("(secret)", "(secret changed)") if _is_secret(key) else (old[key], new[key])
+            )
     return changed, added, removed
 
 
@@ -54,7 +59,7 @@ def flatten(root):
     """Map 'Tag/Child[i]@attr' -> value for every attribute (real values, kept local)."""
     out = {}
     stack = [(root, root.tag)]
-    while stack:                                   # bounded by element count
+    while stack:  # bounded by element count
         el, path = stack.pop()
         for name, value in el.attrib.items():
             out[f"{path}@{name}"] = value

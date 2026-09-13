@@ -17,6 +17,7 @@ router's self-signed HTTPS cert (verification is disabled for the LAN device).
 The password is base64'd for the login form exactly as the web UI does; it is
 never logged. Tested on DN8245V-56 / firmware V500R022.
 """
+
 import base64
 import getpass
 import http.cookiejar
@@ -50,8 +51,9 @@ def fetch(out_path):
 
     token = _page_token(opener, router)
     print(f"[+] page token length: {len(token)}")
-    blob = _post(opener, DOWNLOAD_URL.format(r=router),
-                 {"x.X_HW_Token": token}, referer=_ref(router))
+    blob = _post(
+        opener, DOWNLOAD_URL.format(r=router), {"x.X_HW_Token": token}, referer=_ref(router)
+    )
     _reject_if_not_config(blob)
 
     with open(out_path, "wb") as f:
@@ -68,8 +70,12 @@ def _login(opener, router, user, password):
         "Language": "english",
         "x.X_HW_Token": token,
     }
-    _post(opener, LOGIN_URL.format(r=router), fields,
-          headers={"Cookie": "Cookie=body:Language:english:id=-1"})
+    _post(
+        opener,
+        LOGIN_URL.format(r=router),
+        fields,
+        headers={"Cookie": "Cookie=body:Language:english:id=-1"},
+    )
 
 
 def _page_token(opener, router):
@@ -84,14 +90,16 @@ def _reject_if_not_config(blob):
     """The download endpoint returns the login/error HTML page when auth failed."""
     head = blob[:16].lstrip()
     if len(blob) < 64 or head[:1] == b"<" or b"<html" in blob[:512].lower():
-        raise SystemExit("Downloaded an HTML/error page, not a config (check password / router IP).")
+        raise SystemExit(
+            "Downloaded an HTML/error page, not a config (check password / router IP)."
+        )
 
 
 # ---- HTTP plumbing --------------------------------------------------------
 def _build_opener():
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE       # router ships a self-signed LAN cert
+    ctx.verify_mode = ssl.CERT_NONE  # router ships a self-signed LAN cert
     return urllib.request.build_opener(
         urllib.request.HTTPSHandler(context=ctx),
         urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),

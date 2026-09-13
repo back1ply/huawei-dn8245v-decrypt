@@ -5,6 +5,7 @@ Covers the offline-testable logic: onttoken extraction and the guard that
 rejects an HTML/error page. The live HTTP flow is device-specific and not
 exercised here.
 """
+
 import os
 import sys
 
@@ -31,7 +32,7 @@ def test_html_error_page_is_rejected():
 
 
 def test_real_container_passes_the_guard():
-    m._reject_if_not_config(b"\x02\x00\x00\x00" + b"\x00" * 80)   # version-2 magic, no raise
+    m._reject_if_not_config(b"\x02\x00\x00\x00" + b"\x00" * 80)  # version-2 magic, no raise
 
 
 if __name__ == "__main__":

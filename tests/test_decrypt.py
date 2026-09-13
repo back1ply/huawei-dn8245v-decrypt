@@ -10,6 +10,7 @@ The tool only decrypts, so most tests build a matching encoder locally to
 round-trip, then assert the decrypt path and its malformed-input guards.
 One known-answer test pins the decoder against a real file (below).
 """
+
 import gzip
 import hashlib
 import hmac
@@ -27,7 +28,6 @@ except ModuleNotFoundError:
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 import decrypt_dn8245v as m
 
-
 # A real $2 header block from a WE/TE Data DN8245V backup. It is AES-CBC of the
 # PUBLIC ISP constant below (Huawei's fixed_str for TE Data) — no user data.
 # This is a known-answer test: it catches the decoder drifting from real files,
@@ -41,11 +41,11 @@ def b93_encode_16(data16):
     """16 bytes -> 20 base-93 chars (inverse of the tool's _b93_decode)."""
     out = []
     for i in range(4):
-        val = struct.unpack("<I", data16[i * 4:i * 4 + 4])[0]
+        val = struct.unpack("<I", data16[i * 4 : i * 4 + 4])[0]
         for _ in range(5):
             d = val % 93
             val //= 93
-            out.append("~" if d == 0x1e else chr(d + 0x21))
+            out.append("~" if d == 0x1E else chr(d + 0x21))
     return "".join(out)
 
 
@@ -54,7 +54,7 @@ def encode_mode2(plaintext):
     padded = plaintext + b"\x00" * ((16 - len(plaintext) % 16) % 16 or 16)
     iv = os.urandom(16)
     ct = AES.new(m.PWD_KEY_MODE2, AES.MODE_CBC, iv).encrypt(padded)
-    body = "".join(b93_encode_16(ct[i:i + 16]) for i in range(0, len(ct), 16))
+    body = "".join(b93_encode_16(ct[i : i + 16]) for i in range(0, len(ct), 16))
     body += b93_encode_16(iv)
     return "$2" + body + "$"
 
@@ -95,7 +95,7 @@ def test_full_roundtrip_and_exit_code():
         out = os.path.join(d, "out.xml")
         with open(src, "wb") as fh:
             fh.write(build_container(xml, b"SOMEISPKEY123"))
-        assert m.decrypt(src, out) is True             # returns hmac_ok
+        assert m.decrypt(src, out) is True  # returns hmac_ok
         with open(out, "rb") as fh:
             assert fh.read() == xml
 
@@ -120,7 +120,7 @@ def test_pad_residues_all_ignored():
 def test_hmac_mismatch_returns_false():
     xml = b"<InternetGatewayDevice></InternetGatewayDevice>"
     data = bytearray(build_container(xml, b"KEY"))
-    data[-1] ^= 0xFF                                    # corrupt the HMAC
+    data[-1] ^= 0xFF  # corrupt the HMAC
     with tempfile.TemporaryDirectory() as d:
         src = os.path.join(d, "in.bin")
         with open(src, "wb") as fh:
@@ -139,7 +139,7 @@ def _expect_container_error(data):
         except m.ContainerError:
             pass
         except IndexError as e:
-            raise AssertionError(f"leaked IndexError instead of clean error: {e}")
+            raise AssertionError(f"leaked IndexError instead of clean error: {e}") from e
 
 
 def test_wrong_magic_rejected():
@@ -159,7 +159,7 @@ def test_lying_block_length_rejected():
 def test_corrupted_ciphertext_rejected():
     # key is correct; a flipped ciphertext byte makes the AES output un-gzippable
     data = bytearray(build_container(b"<x/>", b"KEY"))
-    data[-40] ^= 0xFF                                   # flip a ciphertext byte (before HMAC)
+    data[-40] ^= 0xFF  # flip a ciphertext byte (before HMAC)
     _expect_container_error(bytes(data))
 
 

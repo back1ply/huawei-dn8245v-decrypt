@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Tests for huawei_config.py — run with:  python3 tests/test_huawei_config.py"""
+
 import contextlib
 import io
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repo root
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # repo root
 import huawei_config as m
 
 

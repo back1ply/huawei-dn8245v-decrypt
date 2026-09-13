@@ -20,11 +20,12 @@ Safe by construction: every section pulls only non-secret attributes by name, so
 WiFi keys, PPPoE passwords, and user password hashes are never read or printed.
 The --full snapshot redacts secret-named attributes across the whole tree.
 """
+
 import re
 import sys
 import xml.etree.ElementTree as ET
 
-DEFAULT_XML = "decrypted-config.xml"   # in the current directory; override with --file
+DEFAULT_XML = "decrypted-config.xml"  # in the current directory; override with --file
 DEFAULT_SNAPSHOT = "router-snapshot.txt"
 
 # Redact any attribute whose NAME looks secret-bearing. Over-redaction is safe;
@@ -67,8 +68,11 @@ def wan_section(text):
         routed = attr(t, "ConnectionType") == "IP_Routed"
         ppp = "WANPPPConnection" in t
         typ = f"{'PPPoE' if ppp else 'IPoE'} {'routed' if routed else 'bridged'}"
-        flag = "  <-- internet default candidate" if (
-            on(t) == "yes" and routed and "INTERNET" in attr(t, "X_HW_SERVICELIST")) else ""
+        flag = (
+            "  <-- internet default candidate"
+            if (on(t) == "yes" and routed and "INTERNET" in attr(t, "X_HW_SERVICELIST"))
+            else ""
+        )
         print(f"  {i:>2} {attr(t, 'X_HW_SERVICELIST') or '?':<16} {typ:<14} {on(t)}{flag}")
 
 
@@ -83,11 +87,17 @@ def dns_section(text):
 
 def vlan_section(text):
     print("== VLAN tags (need these to move to your own router) ==")
-    term = sorted({attr(t, "VLANID") for t in tags("VLANTerminationInstance", text)
-                   if attr(t, "VLANID")})
+    term = sorted(
+        {attr(t, "VLANID") for t in tags("VLANTerminationInstance", text) if attr(t, "VLANID")}
+    )
     print(f"  line / termination VLAN: {', '.join(term) or 'none (untagged)'}")
-    svc = sorted({attr(t, "X_HW_VLAN") for t in tags(r"WAN(?:PPP|IP)ConnectionInstance", text)
-                  if on(t) == "yes" and "INTERNET" in attr(t, "X_HW_SERVICELIST")})
+    svc = sorted(
+        {
+            attr(t, "X_HW_VLAN")
+            for t in tags(r"WAN(?:PPP|IP)ConnectionInstance", text)
+            if on(t) == "yes" and "INTERNET" in attr(t, "X_HW_SERVICELIST")
+        }
+    )
     print(f"  internet WAN service VLAN(s): {', '.join(svc) or '0 (none)'}")
 
 
@@ -97,7 +107,9 @@ def dhcp_section(text):
         ip = attr(t, "IPInterfaceIPAddress")
         if ip and on(t) == "yes":
             print(f"  router IP {ip}  mask {attr(t, 'IPInterfaceSubnetMask')}")
-    for t in tags("DHCPConditionalServingPoolInstance", text) + tags("LANHostConfigManagement", text):
+    for t in tags("DHCPConditionalServingPoolInstance", text) + tags(
+        "LANHostConfigManagement", text
+    ):
         lo, hi = attr(t, "MinAddress"), attr(t, "MaxAddress")
         if not lo and not hi:
             continue
@@ -109,9 +121,11 @@ def devices_section(text):
     print(f"  {'host':<20} {'ip':<15} {'mac':<18} {'brand':<12} {'rate':<6} rssi")
     for t in tags("X_HW_UserDevInstance", text):
         host = attr(t, "HostName") or attr(t, "UserDevAlias") or "(unnamed)"
-        print(f"  {host:<20} {attr(t, 'IpAddr'):<15} {attr(t, 'MacAddr'):<18} "
-              f"{attr(t, 'BrandName'):<12} {attr(t, 'X_HW_NegotiatedRate'):<6} "
-              f"{attr(t, 'X_HW_RSSI')}")
+        print(
+            f"  {host:<20} {attr(t, 'IpAddr'):<15} {attr(t, 'MacAddr'):<18} "
+            f"{attr(t, 'BrandName'):<12} {attr(t, 'X_HW_NegotiatedRate'):<6} "
+            f"{attr(t, 'X_HW_RSSI')}"
+        )
 
 
 def users_section(text):
@@ -129,8 +143,10 @@ def acs_section(text):
             continue
         every = attr(t, "PeriodicInformInterval")
         print(f"  ACS URL: {url}")
-        print(f"  checks in every {every}s (enabled={on(t, 'PeriodicInformEnable')})"
-              "  <- this is what re-pushes ISP settings")
+        print(
+            f"  checks in every {every}s (enabled={on(t, 'PeriodicInformEnable')})"
+            "  <- this is what re-pushes ISP settings"
+        )
 
 
 def ports_section(text):
@@ -138,8 +154,10 @@ def ports_section(text):
     print(f"  {'port':<10} {'status':<8} {'duplex':<8} {'maxrate':<8} on")
     for t in tags("LANEthernetInterfaceConfigInstance", text):
         name = attr(t, "Name") or attr(t, "Alias") or f"port{attr(t, 'InstanceID')}"
-        print(f"  {name:<10} {attr(t, 'Status') or '?':<8} {attr(t, 'DuplexMode') or '?':<8} "
-              f"{attr(t, 'MaxBitRate') or '?':<8} {on(t)}")
+        print(
+            f"  {name:<10} {attr(t, 'Status') or '?':<8} {attr(t, 'DuplexMode') or '?':<8} "
+            f"{attr(t, 'MaxBitRate') or '?':<8} {on(t)}"
+        )
 
 
 def firewall_section(text):
@@ -165,19 +183,26 @@ def qos_section(text):
     for t in tags("X_HW_QosEnable", text):
         print(f"  global QoS enabled: {on(t, 'enable')}")
     for t in tags("QueueManagement", text):
-        print(f"  queue management: {on(t)}  (defined rules: {attr(t, 'ClassificationNumberOfEntries')})")
-    active = sum(1 for t in tags("ClassificationInstance", text)
-                 if attr(t, "ClassificationEnable") == "1")
+        print(
+            f"  queue management: {on(t)}  (defined rules: {attr(t, 'ClassificationNumberOfEntries')})"
+        )
+    active = sum(
+        1 for t in tags("ClassificationInstance", text) if attr(t, "ClassificationEnable") == "1"
+    )
     print(f"  ACTIVE traffic rules: {active}  <- 0 = no shaping (why bufferbloat isn't fixed)")
 
 
 def voip_section(text):
     print("== VoIP / phone ==")
     for t in tags("VoiceProfileInstance", text):
-        print(f"  profile: enabled={attr(t, 'Enable')}  protocol={attr(t, 'SignalingProtocol') or '(unset)'}")
+        print(
+            f"  profile: enabled={attr(t, 'Enable')}  protocol={attr(t, 'SignalingProtocol') or '(unset)'}"
+        )
     for t in tags("LineInstance", text):
-        print(f"  line {attr(t, 'InstanceID')}: number {attr(t, 'DirectoryNumber') or '(none)'}  "
-              f"enabled {attr(t, 'Enable')}")
+        print(
+            f"  line {attr(t, 'InstanceID')}: number {attr(t, 'DirectoryNumber') or '(none)'}  "
+            f"enabled {attr(t, 'Enable')}"
+        )
 
 
 def ipv6_section(text):
@@ -194,8 +219,11 @@ def parental_section(text):
     print("== Parental controls / filters ==")
     for t in tags("ParentalCtrl", text):
         print(f"  parental control: {on(t)}  default policy {attr(t, 'DefaultPolicy')}")
-    for label, tag in (("URL filter", "UrlFilter"), ("MAC filter", "MacFilter"),
-                       ("WiFi MAC filter", "WLANMacFilter")):
+    for label, tag in (
+        ("URL filter", "UrlFilter"),
+        ("MAC filter", "MacFilter"),
+        ("WiFi MAC filter", "WLANMacFilter"),
+    ):
         for t in tags(tag, text):
             print(f"  {label} rules: {attr(t, 'NumberOfInstances')}")
 
@@ -207,7 +235,9 @@ def remote_section(text):
     for t in tags("X_HW_LocalAccess", text):
         print(f"  local (LAN) access: {on(t)}  {attr(t, 'Protocol')} on port {attr(t, 'Port')}")
     for t in tags("X_HW_CLITelnetAccess", text):
-        print(f"  telnet: {'on' if attr(t, 'Access') == '1' else 'off'} (port {attr(t, 'TelnetPort')})")
+        print(
+            f"  telnet: {'on' if attr(t, 'Access') == '1' else 'off'} (port {attr(t, 'TelnetPort')})"
+        )
     for t in tags("X_HW_CLISSHControl", text):
         print(f"  ssh: {on(t)}")
     for t in tags("X_HW_MainUPnP", text):
@@ -217,10 +247,19 @@ def remote_section(text):
 def alg_section(text):
     print("== ALG (protocol passthrough) ==")
     for t in tags("X_HW_ALG", text):
-        flags = [f"{label}={'on' if attr(t, a) == '1' else 'off'}" for label, a in (
-            ("SIP", "SipEnable"), ("FTP", "FtpEnable"), ("RTSP", "RTSPEnable"),
-            ("H323", "H323Enable"), ("PPTP", "PptpEnable"), ("L2TP", "L2TPEnable"),
-            ("IPSec", "IpSecEnable"), ("TFTP", "TftpEnable"))]
+        flags = [
+            f"{label}={'on' if attr(t, a) == '1' else 'off'}"
+            for label, a in (
+                ("SIP", "SipEnable"),
+                ("FTP", "FtpEnable"),
+                ("RTSP", "RTSPEnable"),
+                ("H323", "H323Enable"),
+                ("PPTP", "PptpEnable"),
+                ("L2TP", "L2TPEnable"),
+                ("IPSec", "IpSecEnable"),
+                ("TFTP", "TftpEnable"),
+            )
+        ]
         print("  " + "  ".join(flags))
 
 
@@ -231,14 +270,18 @@ def iptv_section(text):
             continue
         igmp = "on" if attr(t, "IGMPEnable") == "1" else "off"
         snoop = "on" if attr(t, "SnoopingEnable") == "1" else "off"
-        print(f"  IGMP: {igmp} (v{attr(t, 'IGMPVersion')})  snooping {snoop}  "
-              f"set-top boxes {attr(t, 'STBNumber')}")
+        print(
+            f"  IGMP: {igmp} (v{attr(t, 'IGMPVersion')})  snooping {snoop}  "
+            f"set-top boxes {attr(t, 'STBNumber')}"
+        )
 
 
 def wifiextra_section(text):
     print("== WiFi extras (steering / mesh / WPS) ==")
     for t in tags("X_HW_UseBandSteering", text):
-        print(f"  band steering: {attr(t, 'NumberOfInstances')} band(s), current {attr(t, 'CurrentBand')}")
+        print(
+            f"  band steering: {attr(t, 'NumberOfInstances')} band(s), current {attr(t, 'CurrentBand')}"
+        )
     for t in tags("EasyMesh", text):
         print(f"  EasyMesh: {on(t)} (role {attr(t, 'Role')})")
     wps = sorted({on(t) for t in tags("WPS", text)})
@@ -260,8 +303,11 @@ def usb_section(text):
 def security_section(text):
     print("== Security (DoS / misc) ==")
     for t in tags("Dosfilter", text):
-        active = [n[:-2] for n in ("SynFloodEn", "SmurfEn", "LandEn", "WinnukeEn", "PingSweepEn")
-                  if attr(t, n) == "1"]
+        active = [
+            n[:-2]
+            for n in ("SynFloodEn", "SmurfEn", "LandEn", "WinnukeEn", "PingSweepEn")
+            if attr(t, n) == "1"
+        ]
         print(f"  DoS protections on: {', '.join(active) or 'none'}")
     for t in tags("AntiDNSRebind", text):
         print(f"  anti-DNS-rebind: {on(t)}")
@@ -329,7 +375,7 @@ def full_snapshot(root):
     """Walk the whole config tree iteratively; return (indented text, redact count)."""
     lines, redacted = [], 0
     stack = [(root, 0)]
-    while stack:                                   # bounded by element count (~1700)
+    while stack:  # bounded by element count (~1700)
         el, depth = stack.pop()
         parts = []
         for name, value in el.attrib.items():
@@ -344,7 +390,7 @@ def full_snapshot(root):
         if text:
             line += f"  ::= {text}"
         lines.append(line)
-        for child in reversed(list(el)):           # reversed so children print in order
+        for child in reversed(list(el)):  # reversed so children print in order
             stack.append((child, depth + 1))
     return "\n".join(lines), redacted
 
@@ -365,7 +411,7 @@ def _pop_value(args, flag, default):
         if i + 1 >= len(args):
             raise SystemExit(f"{flag} needs a value, e.g. {flag} PATH")
         value = args[i + 1]
-        del args[i:i + 2]
+        del args[i : i + 2]
         return value
     return default
 
@@ -379,7 +425,7 @@ if __name__ == "__main__":
     full = "--full" in args
     path = _pop_value(args, "--file", DEFAULT_XML)
     out = _pop_value(args, "--out", DEFAULT_SNAPSHOT)
-    wanted = [a for a in args if not a.startswith("--")]   # section names
+    wanted = [a for a in args if not a.startswith("--")]  # section names
 
     if full:
         write_full_snapshot(path, out)
@@ -390,5 +436,5 @@ if __name__ == "__main__":
         print(f"unknown section(s): {', '.join(bad)}")
         print("valid:", ", ".join(SECTION_NAMES))
         raise SystemExit(2)
-    with open(path, "r", encoding="latin-1") as f:
+    with open(path, encoding="latin-1") as f:
         dump(f.read(), wanted or None)

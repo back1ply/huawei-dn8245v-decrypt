@@ -30,6 +30,7 @@ Credits: base-93 / Mode-2 decoder and PWD_KEY_MODE2 from
   - github.com/coolrecep/Huawei-ONT-Firmware-Reverse-Engineering-Research
   - github.com/minanagehsalalma/huawei-dg8045-hg630-hg633-...
 """
+
 import hashlib
 import hmac
 import struct
@@ -42,14 +43,12 @@ except ModuleNotFoundError:  # Debian ships pycryptodome under "Cryptodome"
     from Cryptodome.Cipher import AES
 
 # Public constant (Huawei field-encryption "Mode 2" AES-256 key)
-PWD_KEY_MODE2 = bytes.fromhex(
-    "6fc6e3436a53b6310dc09a475494ac774e7afb21b9e58fc8e58b5660e48e2498"
-)
+PWD_KEY_MODE2 = bytes.fromhex("6fc6e3436a53b6310dc09a475494ac774e7afb21b9e58fc8e58b5660e48e2498")
 
 # Cap on decompressed output: refuse a gzip bomb before it fills memory.
 MAX_PLAINTEXT = 64 << 20  # 64 MiB; real configs are a few hundred KB
 # Cap on the encrypted input we read at all: a real backup is tens of KB.
-MAX_INPUT = 64 << 20      # bound f.read() so a huge .bin can't OOM before validation
+MAX_INPUT = 64 << 20  # bound f.read() so a huge .bin can't OOM before validation
 
 
 class ContainerError(ValueError):
@@ -83,12 +82,12 @@ def decrypt(path_in, path_out):
 def parse_container(data):
     """Validate a version-2 container and split it into (fixed_str, salt, ct, sig)."""
     blk_len = _validate_header(data)
-    block = data[12:12 + blk_len].decode("latin1")
-    fixed_str = decode_mode2(block)                 # e.g. b"HUAWEIOPTICNETWORKTERMINALTEDATA"
+    block = data[12 : 12 + blk_len].decode("latin1")
+    fixed_str = decode_mode2(block)  # e.g. b"HUAWEIOPTICNETWORKTERMINALTEDATA"
 
-    body = data[12 + blk_len:]
-    salt, sig = body[:16], body[len(body) - 32:]
-    ct = body[16:len(body) - 32]
+    body = data[12 + blk_len :]
+    salt, sig = body[:16], body[len(body) - 32 :]
+    ct = body[16 : len(body) - 32]
     if len(ct) % 16 != 0:
         raise ContainerError("Ciphertext length is not a multiple of the AES block size.")
     # guaranteed by the length check above; assert so a bad bound-check fails loudly
@@ -119,10 +118,10 @@ def decode_mode2(s):
     if len(vals) % 20 != 0 or len(vals) // 20 < 2:
         raise ContainerError("bad Mode-2 length")
     nb = len(vals) // 20
-    iv = _b93_decode(vals[(nb - 1) * 20:])
+    iv = _b93_decode(vals[(nb - 1) * 20 :])
     ct = bytearray()
     for b in range(nb - 1):
-        ct += _b93_decode(vals[b * 20:(b + 1) * 20])
+        ct += _b93_decode(vals[b * 20 : (b + 1) * 20])
     d = AES.new(PWD_KEY_MODE2, AES.MODE_CBC, iv).decrypt(bytes(ct))
     n = d.find(0)
     return d[:n] if n != -1 else d
@@ -135,7 +134,7 @@ def _b93_preprocess(text):
     vals = []
     for ch in text:
         c = ord(ch)
-        vals.append(0x1e if c == 0x7e else c - 0x21)
+        vals.append(0x1E if c == 0x7E else c - 0x21)
     return vals
 
 
@@ -170,7 +169,9 @@ def decompress_payload(dec):
     try:
         xml = d.decompress(dec, MAX_PLAINTEXT)
     except zlib.error as e:
-        raise ContainerError(f"decryption produced no valid gzip stream (wrong key/format?): {e}")
+        raise ContainerError(
+            f"decryption produced no valid gzip stream (wrong key/format?): {e}"
+        ) from e
     if d.unconsumed_tail:
         raise ContainerError("payload exceeds 64 MiB cap (possible gzip bomb).")
     if not d.eof:
@@ -186,6 +187,6 @@ if __name__ == "__main__":
         ok = decrypt(sys.argv[1], sys.argv[2])
     except ContainerError as exc:
         print(f"[!] {exc}")
-        raise SystemExit(3)
+        raise SystemExit(3) from None
     # non-zero exit if the HMAC did not verify, so callers can detect a bad decrypt
     raise SystemExit(0 if ok else 2)

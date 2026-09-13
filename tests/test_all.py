@@ -10,6 +10,7 @@ reports pass/fail; the files are also plain pytest-discoverable test functions.
 
 (The decryptor suite needs pycryptodome; the other tools are stdlib-only.)
 """
+
 import os
 import subprocess
 import sys
@@ -28,8 +29,7 @@ def main():
     failed = []
     for name, argv in SUITE:
         script = os.path.join(ROOT, *argv[0].split("/"))
-        result = subprocess.run([sys.executable, script, *argv[1:]],
-                                capture_output=True, text=True)
+        result = subprocess.run([sys.executable, script, *argv[1:]], capture_output=True, text=True)
         ok = result.returncode == 0
         print(f"  {'PASS' if ok else 'FAIL'}  {name}")
         if not ok:

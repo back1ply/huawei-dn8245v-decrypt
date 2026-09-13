@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for config_diff.py — run with:  python3 tests/test_config_diff.py"""
+
 import os
 import sys
 import xml.etree.ElementTree as ET
