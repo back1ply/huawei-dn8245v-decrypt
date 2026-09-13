@@ -181,9 +181,13 @@ turned out to be an **unanswered, now-archived question** — no solution was ev
 posted. The exact WE/TE Data `fixed_str` above still returns **zero** public
 search hits.
 
-**Still not chased down:** Arabic "Prografor" videos that claim to decrypt
-dn8245v/dg8245v — video content I couldn't verify. Check those before treating
-any of this as first-published.
+**Checked the Arabic router-unlock scene (2026):** DN8245V-56 decryption there
+circulates as a **private, paid "software"** among unlock sellers, not an open
+method — public posts repeatedly ask *"has anyone decrypted the WE DN8245V-56?"*
+and go unanswered, and the "unlock" videos demo a tool without revealing the
+algorithm or key. No open write-up of the method **+** the WE `fixed_str` turned
+up. In other words: this capability exists privately/for pay; the documented,
+open version here appears to be the first public one for this container.
 
 **Note — re-encryption is a separate, still-open problem.** Modifying a backup
 and getting the router to accept it back is unsolved publicly: the container
