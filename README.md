@@ -196,6 +196,29 @@ write-up:
 [reverseengineering.stackexchange.com/q/33737](https://reverseengineering.stackexchange.com/questions/33737/)).
 This repo only **decrypts** — it does not re-sign.
 
+## Sources & related work
+
+Collected so nobody has to re-search this. See **Prior art** above for what each
+does and doesn't cover.
+
+**Method write-ups**
+- devilinside.me — [gzip → AES → HMAC container, aescrypt2 emulation](https://devilinside.me/blogs/decrypt-configuration-files-exactly-how-huawei-ont-does)
+- Fayaru — [Huawei config password encryption + the field key](https://blog.fayaru.me/posts/huawei_router_config/)
+
+**Closest for the sibling model** (edits *plaintext* config, does not decrypt the v2 backup)
+- Ratr — [DG8245V-10 config-edit guide](https://github.com/Jakiboy/Ratr/blob/main/docs/Huawei-DG8245V-10-Config.md) · [export guide](https://github.com/Jakiboy/Ratr/blob/main/docs/Huawei-DG8245V-10-Export.md)
+
+**People asking for a DN8245V/DG8245V decryptor — all unanswered**
+- Hak5 — ["How to decrypt hw_ctree of Huawei DN8245V-56?"](https://forums.hak5.org/topic/57207-how-to-decrypt-hw_ctree-of-huawei-dn8245v-56/)
+- palmerc/AESCrypt2 — [issue #5 (DN8245V-56)](https://github.com/palmerc/AESCrypt2/issues/5)
+- mkst/zte-config-utility — [issue #139 (DG8245V-10 super-admin)](https://github.com/mkst/zte-config-utility/issues/139)
+- Reverse Engineering SE — [DG8045 re-encrypt / signature, 2026](https://reverseengineering.stackexchange.com/questions/33737/)
+
+**The private "unlock" scene** — demos a paid tool; no method or key published
+- YouTube — [«فك تشفير جميع راوترات هواوي» / "Decrypt all Huawei routers"](https://www.youtube.com/watch?v=-2sU4H805Rk)
+- YouTube — [HG8245 decrypt/encrypt hw_ctree (old aescrypt2, GPON only)](https://www.youtube.com/watch?v=4cGYuwjDGO4)
+- Facebook — [unlockWMFI: unlock via config file (seller)](https://www.facebook.com/unlockWMFI/videos/1351743516648316/)
+
 ## Credits
 
 Built directly on:
