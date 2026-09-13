@@ -56,7 +56,78 @@ class ContainerError(ValueError):
     """The input is not a well-formed version-2 DN8245V container."""
 
 
+# ---- top-level operation --------------------------------------------------
+def decrypt(path_in, path_out):
+    with open(path_in, "rb") as f:
+        data = f.read(MAX_INPUT + 1)
+    if len(data) > MAX_INPUT:
+        raise ContainerError("Input larger than 64 MiB; not a DN8245V config backup.")
+
+    fixed_str, salt, ct, sig = parse_container(data)
+    print(f"[+] recovered ISP fixed_str: {fixed_str.decode('latin1', 'ignore')!r}")
+
+    key = derive_key(salt, fixed_str)
+    hmac_ok = hmac.compare_digest(hmac.new(key, ct, hashlib.sha256).digest(), sig)
+    print("[+] HMAC", "verified" if hmac_ok else "MISMATCH (output may be garbage)")
+
+    dec = AES.new(key, AES.MODE_CBC, salt).decrypt(ct)
+    xml = decompress_payload(dec)
+
+    with open(path_out, "wb") as f:
+        f.write(xml)
+    print(f"[+] wrote {path_out} ({len(xml)} bytes of plaintext XML)")
+    return hmac_ok
+
+
+# ---- container parsing ----------------------------------------------------
+def parse_container(data):
+    """Validate a version-2 container and split it into (fixed_str, salt, ct, sig)."""
+    blk_len = _validate_header(data)
+    block = data[12:12 + blk_len].decode("latin1")
+    fixed_str = decode_mode2(block)                 # e.g. b"HUAWEIOPTICNETWORKTERMINALTEDATA"
+
+    body = data[12 + blk_len:]
+    salt, sig = body[:16], body[len(body) - 32:]
+    ct = body[16:len(body) - 32]
+    if len(ct) % 16 != 0:
+        raise ContainerError("Ciphertext length is not a multiple of the AES block size.")
+    # guaranteed by the length check above; assert so a bad bound-check fails loudly
+    assert len(salt) == 16 and len(sig) == 32 and len(ct) >= 16
+    return fixed_str, salt, ct, sig
+
+
+def _validate_header(data):
+    """Check the 12-byte framing and return the $2 block length, bounded to the file."""
+    if len(data) < 4 or data[:4] != b"\x02\x00\x00\x00":
+        raise ContainerError("Not a version-2 DN8245V container (magic != 02 00 00 00).")
+    if len(data) < 12:
+        raise ContainerError("Truncated container: header is under 12 bytes.")
+    # header block length is attacker-controlled: bound it before slicing.
+    # need room for the 12-byte header + block + 16 salt + >=16 ciphertext + 32 HMAC.
+    blk_len = struct.unpack("<I", data[8:12])[0]
+    if 12 + blk_len + 64 > len(data):
+        raise ContainerError("Corrupt container: header block length exceeds file size.")
+    return blk_len
+
+
 # ---- base-93 / Mode-2 ($2...$) decoder ------------------------------------
+def decode_mode2(s):
+    """Decode a $2...$ base-93 value to its plaintext bytes."""
+    if not (s.startswith("$2") and s.endswith("$")):
+        raise ContainerError("not a $2...$ value")
+    vals = _b93_preprocess(s[2:-1])
+    if len(vals) % 20 != 0 or len(vals) // 20 < 2:
+        raise ContainerError("bad Mode-2 length")
+    nb = len(vals) // 20
+    iv = _b93_decode(vals[(nb - 1) * 20:])
+    ct = bytearray()
+    for b in range(nb - 1):
+        ct += _b93_decode(vals[b * 20:(b + 1) * 20])
+    d = AES.new(PWD_KEY_MODE2, AES.MODE_CBC, iv).decrypt(bytes(ct))
+    n = d.find(0)
+    return d[:n] if n != -1 else d
+
+
 def _b93_preprocess(text):
     # NOTE: caller unescapes XML entities first for $2 values pulled from inside
     # the decrypted XML. The header block is raw base-93 and must NOT be
@@ -80,24 +151,7 @@ def _b93_decode(block):
     return bytes(out)
 
 
-def decode_mode2(s):
-    """Decode a $2...$ base-93 value to its plaintext bytes."""
-    if not (s.startswith("$2") and s.endswith("$")):
-        raise ContainerError("not a $2...$ value")
-    vals = _b93_preprocess(s[2:-1])
-    if len(vals) % 20 != 0 or len(vals) // 20 < 2:
-        raise ContainerError("bad Mode-2 length")
-    nb = len(vals) // 20
-    iv = _b93_decode(vals[(nb - 1) * 20:])
-    ct = bytearray()
-    for b in range(nb - 1):
-        ct += _b93_decode(vals[b * 20:(b + 1) * 20])
-    d = AES.new(PWD_KEY_MODE2, AES.MODE_CBC, iv).decrypt(bytes(ct))
-    n = d.find(0)
-    return d[:n] if n != -1 else d
-
-
-# ---- config container decrypt ---------------------------------------------
+# ---- key derivation & payload ---------------------------------------------
 def derive_key(salt, fixed_str, iters=8192):
     assert len(salt) == 16, "salt must be 16 bytes"
     km = salt + b"\x00" * 16
@@ -108,36 +162,6 @@ def derive_key(salt, fixed_str, iters=8192):
         km = h.digest()
     assert len(km) == 32, "derived AES-256 key must be 32 bytes"
     return km
-
-
-def _validate_header(data):
-    """Check the 12-byte framing and return the $2 block length, bounded to the file."""
-    if len(data) < 4 or data[:4] != b"\x02\x00\x00\x00":
-        raise ContainerError("Not a version-2 DN8245V container (magic != 02 00 00 00).")
-    if len(data) < 12:
-        raise ContainerError("Truncated container: header is under 12 bytes.")
-    # header block length is attacker-controlled: bound it before slicing.
-    # need room for the 12-byte header + block + 16 salt + >=16 ciphertext + 32 HMAC.
-    blk_len = struct.unpack("<I", data[8:12])[0]
-    if 12 + blk_len + 64 > len(data):
-        raise ContainerError("Corrupt container: header block length exceeds file size.")
-    return blk_len
-
-
-def parse_container(data):
-    """Validate a version-2 container and split it into (fixed_str, salt, ct, sig)."""
-    blk_len = _validate_header(data)
-    block = data[12:12 + blk_len].decode("latin1")
-    fixed_str = decode_mode2(block)                 # e.g. b"HUAWEIOPTICNETWORKTERMINALTEDATA"
-
-    body = data[12 + blk_len:]
-    salt, sig = body[:16], body[len(body) - 32:]
-    ct = body[16:len(body) - 32]
-    if len(ct) % 16 != 0:
-        raise ContainerError("Ciphertext length is not a multiple of the AES block size.")
-    # guaranteed by the length check above; assert so a bad bound-check fails loudly
-    assert len(salt) == 16 and len(sig) == 32 and len(ct) >= 16
-    return fixed_str, salt, ct, sig
 
 
 def decompress_payload(dec):
@@ -152,28 +176,6 @@ def decompress_payload(dec):
     if not d.eof:
         raise ContainerError("gzip stream did not terminate (truncated or wrong key?).")
     return xml
-
-
-def decrypt(path_in, path_out):
-    with open(path_in, "rb") as f:
-        data = f.read(MAX_INPUT + 1)
-    if len(data) > MAX_INPUT:
-        raise ContainerError("Input larger than 64 MiB; not a DN8245V config backup.")
-
-    fixed_str, salt, ct, sig = parse_container(data)
-    print(f"[+] recovered ISP fixed_str: {fixed_str.decode('latin1', 'ignore')!r}")
-
-    key = derive_key(salt, fixed_str)
-    hmac_ok = hmac.compare_digest(hmac.new(key, ct, hashlib.sha256).digest(), sig)
-    print("[+] HMAC", "verified" if hmac_ok else "MISMATCH (output may be garbage)")
-
-    dec = AES.new(key, AES.MODE_CBC, salt).decrypt(ct)
-    xml = decompress_payload(dec)
-
-    with open(path_out, "wb") as f:
-        f.write(xml)
-    print(f"[+] wrote {path_out} ({len(xml)} bytes of plaintext XML)")
-    return hmac_ok
 
 
 if __name__ == "__main__":
