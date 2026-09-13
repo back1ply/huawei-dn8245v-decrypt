@@ -59,6 +59,28 @@ body      = AES-256-CBC( key, iv = salt )
 The container also carries an `HMAC-SHA256(key, ciphertext)` that the tool checks;
 a mismatch is reported and the process exits non-zero.
 
+## The pipeline
+
+```
+fetch-config.py  ->  decrypt_dn8245v.py  ->  router-dump.py  ->  config-diff.py
+   download            decrypt                read              compare two
+```
+
+## Download it from the router (`fetch-config.py`)
+
+Pulls the encrypted backup straight off the router over the LAN, so you don't
+have to click through the web UI:
+
+```bash
+ROUTER_PASS='youradminpw' python3 fetch-config.py config.bin
+python3 fetch-config.py config.bin            # or omit ROUTER_PASS to be prompted
+```
+
+Environment: `ROUTER_IP` (default `192.168.1.1`), `ROUTER_USER` (default `admin`),
+`ROUTER_PASS`. The password is base64'd for the login form exactly as the web UI
+does and is never logged or passed on the command line. Device-specific (drives
+`login.cgi` + `cfgfiledown.cgi` with a per-page token); tested on DN8245V-56.
+
 ## Install & use
 
 ```bash
