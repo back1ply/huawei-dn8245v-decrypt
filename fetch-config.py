@@ -37,7 +37,11 @@ TOKEN_RE = re.compile(r'name="onttoken"[^>]*value="([0-9a-fA-F]{16,})"')
 def fetch(out_path):
     router = os.environ.get("ROUTER_IP", "192.168.1.1")
     user = os.environ.get("ROUTER_USER", "admin")
-    password = os.environ.get("ROUTER_PASS") or getpass.getpass("Router admin password: ")
+    password = os.environ.get("ROUTER_PASS")
+    if not password:
+        if not sys.stdin.isatty():
+            raise SystemExit("No terminal to prompt on -- set ROUTER_PASS=... instead.")
+        password = getpass.getpass("Router admin password: ")
 
     opener = _build_opener()
     _login(opener, router, user, password)
