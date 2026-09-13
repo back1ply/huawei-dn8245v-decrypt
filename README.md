@@ -79,7 +79,7 @@ would corrupt the raw header block).
 ## Tests
 
 ```bash
-python3 test_decrypt.py        # no pytest needed; 9 asserts
+python3 test_decrypt.py        # no pytest needed; 9 tests
 ```
 
 Covers a round-trip, all AES-pad residues, HMAC-mismatch, wrong-key, malformed
