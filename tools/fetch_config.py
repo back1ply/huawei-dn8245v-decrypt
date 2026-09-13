@@ -3,8 +3,8 @@
 Download the encrypted configuration backup from a Huawei DN8245V over the LAN,
 so you can then decrypt it with decrypt_dn8245v.py. Stdlib only.
 
-    ROUTER_PASS='...' python3 fetch-config.py config.bin
-    python3 fetch-config.py config.bin        # prompts for the password instead
+    ROUTER_PASS='...' python3 fetch_config.py config.bin
+    python3 fetch_config.py config.bin        # prompts for the password instead
 
 Environment:
     ROUTER_IP    default 192.168.1.1
@@ -57,7 +57,7 @@ def fetch(out_path):
     with open(out_path, "wb") as f:
         f.write(blob)
     print(f"[+] wrote {out_path} ({len(blob)} bytes)")
-    print(f"    next: python3 huawei-config.py decrypt {out_path} config.xml")
+    print(f"    next: python3 huawei_config.py decrypt {out_path} config.xml")
 
 
 def _login(opener, router, user, password):
@@ -120,26 +120,7 @@ def _ref(router):
     return f"https://{router}/{CFG_PAGE}"
 
 
-def _selftest():
-    # token extraction from a realistic page fragment
-    page = '<input type="hidden" name="onttoken" id="onttoken" value="A1B2C3D4E5F60789ABCD"/>'
-    assert TOKEN_RE.search(page).group(1) == "A1B2C3D4E5F60789ABCD"
-    assert TOKEN_RE.search('name="onttoken" value="short"') is None   # too short -> not matched
-    # the HTML-page guard rejects an error page, accepts a real container
-    for bad in (b"<html><body>login</body></html>", b"<!DOCTYPE html>" + b"x" * 100, b"short"):
-        try:
-            _reject_if_not_config(bad)
-            raise AssertionError(f"should have rejected: {bad[:20]!r}")
-        except SystemExit:
-            pass
-    _reject_if_not_config(b"\x02\x00\x00\x00" + b"\x00" * 80)   # version-2 container magic -> ok
-    print("selftest ok")
-
-
 if __name__ == "__main__":
-    if "--selftest" in sys.argv:
-        _selftest()
-        raise SystemExit(0)
     if len(sys.argv) != 2:
         print(__doc__)
         raise SystemExit(1)

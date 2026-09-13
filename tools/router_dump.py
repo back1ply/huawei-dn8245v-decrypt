@@ -4,13 +4,12 @@ Dump the human-useful settings from a decrypted Huawei DN8245V config in one go
 (22 sections: WiFi, WAN, DHCP, DNS, devices, QoS, VoIP, security, ...). Read-only.
 
 Usage:
-    python3 router-dump.py                    # all sections (readable summary)
-    python3 router-dump.py wifi wan           # just the sections you name
-    python3 router-dump.py --list             # list section names
-    python3 router-dump.py --full             # 100% snapshot to a file
-    python3 router-dump.py --file X.xml ...   # use a different config file
-    python3 router-dump.py --out Y.txt --full # write the snapshot somewhere else
-    python3 router-dump.py --selftest
+    python3 router_dump.py                    # all sections (readable summary)
+    python3 router_dump.py wifi wan           # just the sections you name
+    python3 router_dump.py --list             # list section names
+    python3 router_dump.py --full             # 100% snapshot to a file
+    python3 router_dump.py --file X.xml ...   # use a different config file
+    python3 router_dump.py --out Y.txt --full # write the snapshot somewhere else
 
 Sections: system wifi wan vlan dhcp dns ports devices users qos voip ipv6
           parental remote alg iptv wifiextra usb security firewall time acs
@@ -21,8 +20,6 @@ Safe by construction: every section pulls only non-secret attributes by name, so
 WiFi keys, PPPoE passwords, and user password hashes are never read or printed.
 The --full snapshot redacts secret-named attributes across the whole tree.
 """
-import contextlib
-import io
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -361,45 +358,6 @@ def write_full_snapshot(path_in, path_out):
     print(f"[+] {redacted} secret value(s) redacted by name")
 
 
-def _selftest():
-    sample = (
-        '<WLANConfigurationInstance SSID="MyHome" Enable="1" Channel="6" '
-        'X_HW_RFBand="2.4GHz" BeaconType="11i" KeyPassphrase="secretpsk" '
-        'SSIDAdvertisementEnabled="1"/>\n'
-        '<WANPPPConnectionInstance Enable="1" ConnectionType="IP_Routed" '
-        'Password="pppsecret" X_HW_SERVICELIST="TR069_INTERNET" X_HW_VLAN="10"/>\n'
-        '<VLANTerminationInstance Enable="1" VLANID="835"/>\n'
-        '<X_HW_WebUserInfoInstance UserName="admin" UserLevel="0" Enable="1" '
-        'Password="hash" Salt="s"/>\n'
-        '<X_HW_UserDevInstance HostName="laptop" IpAddr="192.168.1.5" '
-        'MacAddr="aa:bb:cc:dd:ee:ff" BrandName="Dell" X_HW_NegotiatedRate="300" '
-        'X_HW_RSSI="-55"/>\n'
-        '<ManagementServer URL="http://acs.example/cwmp" PeriodicInformEnable="1" '
-        'PeriodicInformInterval="86400" Password="acssecret"/>'
-    )
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        dump(sample)
-    out = buf.getvalue()
-    assert "MyHome" in out and "TR069_INTERNET" in out and "admin" in out
-    assert "laptop" in out and "acs.example" in out
-    for leaked in ("secretpsk", "pppsecret", "hash", "acssecret"):
-        assert leaked not in out, f"secret leaked: {leaked}"
-
-    # section filter: only the named section prints
-    buf2 = io.StringIO()
-    with contextlib.redirect_stdout(buf2):
-        dump(sample, ["wifi"])
-    only = buf2.getvalue()
-    assert "== WiFi ==" in only and "== WAN ==" not in only
-
-    # full-snapshot mode: keeps structure, redacts secret-named attrs
-    root = ET.fromstring('<root><WLAN SSID="x" KeyPassphrase="topsecret"/></root>')
-    snap, red = full_snapshot(root)
-    assert 'SSID="x"' in snap and "topsecret" not in snap and red == 1
-    print("selftest ok")
-
-
 def _pop_value(args, flag, default):
     """Remove '--flag VALUE' from args and return VALUE (or default)."""
     if flag in args:
@@ -414,9 +372,6 @@ def _pop_value(args, flag, default):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if "--selftest" in args:
-        _selftest()
-        raise SystemExit(0)
     if "--list" in args:
         print("sections:", ", ".join(SECTION_NAMES))
         raise SystemExit(0)

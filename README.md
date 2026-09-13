@@ -62,42 +62,42 @@ a mismatch is reported and the process exits non-zero.
 ## The pipeline
 
 ```
-fetch-config.py  ->  decrypt_dn8245v.py  ->  router-dump.py  ->  config-diff.py
+fetch_config.py  ->  decrypt_dn8245v.py  ->  router_dump.py  ->  config_diff.py
    download            decrypt                read              compare two
 ```
 
 Or drive all four from one entry point:
 
 ```bash
-python3 huawei-config.py fetch    config.bin
-python3 huawei-config.py decrypt  config.bin config.xml
-python3 huawei-config.py dump     --file config.xml
-python3 huawei-config.py diff     old.xml new.xml
+python3 huawei_config.py fetch    config.bin
+python3 huawei_config.py decrypt  config.bin config.xml
+python3 huawei_config.py dump     --file config.xml
+python3 huawei_config.py diff     old.xml new.xml
 ```
 
 ## Repo layout
 
 ```
-huawei-config.py        # unified entry point (fetch|decrypt|dump|diff)
+huawei_config.py        # unified entry point (fetch|decrypt|dump|diff)
 tools/
-  fetch-config.py       # download the encrypted backup from the router
+  fetch_config.py       # download the encrypted backup from the router
   decrypt_dn8245v.py    # decrypt it to plaintext XML
-  router-dump.py        # print the settings as readable sections
-  config-diff.py        # compare two decrypted configs
+  router_dump.py        # print the settings as readable sections
+  config_diff.py        # compare two decrypted configs
 tests/
-  test_decrypt.py       # decryptor tests (each tool also has --selftest)
+  test_*.py             # one test file per tool + test_all.py runner
 ```
 
 The four tools also run standalone (`python3 tools/<name>.py ...`).
 
-## Download it from the router (`fetch-config.py`)
+## Download it from the router (`fetch_config.py`)
 
 Pulls the encrypted backup straight off the router over the LAN, so you don't
 have to click through the web UI:
 
 ```bash
-ROUTER_PASS='youradminpw' python3 tools/fetch-config.py config.bin
-python3 tools/fetch-config.py config.bin       # or omit ROUTER_PASS to be prompted
+ROUTER_PASS='youradminpw' python3 tools/fetch_config.py config.bin
+python3 tools/fetch_config.py config.bin       # or omit ROUTER_PASS to be prompted
 ```
 
 Environment: `ROUTER_IP` (default `192.168.1.1`), `ROUTER_USER` (default `admin`),
@@ -122,16 +122,16 @@ XML-escaped inside the config, so unescape the string (`html.unescape`) **before
 passing it to `decode_mode2()`; the decoder deliberately does not unescape (that
 would corrupt the raw header block).
 
-## Read the config (`router-dump.py`)
+## Read the config (`router_dump.py`)
 
-Once you have the plaintext XML, `router-dump.py` prints it as readable sections
+Once you have the plaintext XML, `router_dump.py` prints it as readable sections
 instead of 280+ raw tags:
 
 ```bash
-python3 tools/router-dump.py --file config.xml            # all sections
-python3 tools/router-dump.py --file config.xml wifi wan   # just the ones you name
-python3 tools/router-dump.py --list                        # section names
-python3 tools/router-dump.py --file config.xml --full      # 100% snapshot to a text file
+python3 tools/router_dump.py --file config.xml            # all sections
+python3 tools/router_dump.py --file config.xml wifi wan   # just the ones you name
+python3 tools/router_dump.py --list                        # section names
+python3 tools/router_dump.py --file config.xml --full      # 100% snapshot to a text file
 ```
 
 Sections: `system wifi wan vlan dhcp dns ports devices users qos voip ipv6
@@ -141,14 +141,14 @@ Safe by construction: sections read only non-secret attributes, and `--full`
 redacts every secret-named attribute across the whole tree — so WiFi keys, PPPoE
 passwords, and user hashes are never printed.
 
-## Compare two configs (`config-diff.py`)
+## Compare two configs (`config_diff.py`)
 
 See exactly what changed between two decrypted configs — handy for "what did
 this toggle do?" (dump, change one thing, dump again, diff) or spotting what a
 firmware update rewrote:
 
 ```bash
-python3 tools/config-diff.py old.xml new.xml
+python3 tools/config_diff.py old.xml new.xml
 ```
 
 Secret-named values are masked before comparing, so a changed password shows as
@@ -160,15 +160,17 @@ Secret-named values are masked before comparing, so a changed password shows as
 python3 tests/test_all.py        # runs everything, no pytest needed
 ```
 
-The decryptor has a classic external test file (`tests/test_decrypt.py`, 9
-tests): a round-trip, all AES-pad residues, HMAC-mismatch, wrong-key, malformed
-headers, and a known-answer test that pins the decoder to a real header block
-(which decodes to the public ISP constant — no user data).
+Every tool has its own test file under `tests/` (`test_decrypt.py`,
+`test_router_dump.py`, `test_config_diff.py`, `test_fetch_config.py`,
+`test_huawei_config.py`). They use plain `assert`s and a `__main__` runner, so
+they need no pytest — but they are also pytest-discoverable if you prefer
+(`pytest tests/`). `tests/test_all.py` runs them all; CI
+(`.github/workflows/test.yml`) runs it on every push.
 
-The other tools carry their tests inside themselves as `--selftest` (their
-hyphenated file names can't be imported as modules), so `tests/test_all.py`
-runs each as a subprocess. CI (`.github/workflows/test.yml`) runs the same
-runner on every push.
+The decryptor file is the meatiest: a round-trip, all AES-pad residues,
+HMAC-mismatch, corrupted-ciphertext, malformed headers, and a known-answer test
+that pins the decoder to a real header block (which decodes to the public ISP
+constant — no user data).
 
 ## Prior art / could-not-verify
 

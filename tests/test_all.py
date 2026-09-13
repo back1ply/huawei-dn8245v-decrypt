@@ -4,10 +4,9 @@ Run the whole test suite with one command:
 
     python3 tests/test_all.py
 
-The decryptor has a classic external test file (it is importable). The other
-tools carry their tests inside themselves as --selftest, because their file
-names contain hyphens and so cannot be imported as modules. This runner invokes
-each one as a subprocess and reports pass/fail.
+Each tool has a normal test file under tests/ (the tools use underscore names,
+so they import cleanly). This runner invokes each file as a subprocess and
+reports pass/fail; the files are also plain pytest-discoverable test functions.
 
 (The decryptor suite needs pycryptodome; the other tools are stdlib-only.)
 """
@@ -17,11 +16,11 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SUITE = [
-    ("decryptor tests", ["tests/test_decrypt.py"]),
-    ("router-dump", ["tools/router-dump.py", "--selftest"]),
-    ("config-diff", ["tools/config-diff.py", "--selftest"]),
-    ("fetch-config", ["tools/fetch-config.py", "--selftest"]),
-    ("huawei-config", ["huawei-config.py", "--selftest"]),
+    ("decryptor", ["tests/test_decrypt.py"]),
+    ("router-dump", ["tests/test_router_dump.py"]),
+    ("config-diff", ["tests/test_config_diff.py"]),
+    ("fetch-config", ["tests/test_fetch_config.py"]),
+    ("huawei-config", ["tests/test_huawei_config.py"]),
 ]
 
 

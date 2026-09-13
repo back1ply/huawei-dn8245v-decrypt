@@ -6,8 +6,7 @@ Great for "what did this toggle actually do?" (dump before, change one thing,
 dump after, diff) or spotting what a firmware update rewrote.
 
 Usage:
-    python3 config-diff.py OLD.xml NEW.xml
-    python3 config-diff.py --selftest
+    python3 config_diff.py OLD.xml NEW.xml
 
 Secret-named attributes are masked to *** before comparing, so a changed
 password shows as "(secret changed)" -- never the value.
@@ -84,28 +83,7 @@ def _print_group(title, items, fmt):
     print()
 
 
-def _selftest():
-    old = ET.fromstring(
-        '<cfg><WLAN SSID="Home" Channel="6" KeyPassphrase="oldpw"/>'
-        '<WAN Enable="1"/></cfg>')
-    new = ET.fromstring(
-        '<cfg><WLAN SSID="Home" Channel="11" KeyPassphrase="newpw"/>'
-        '<DHCP Range="192.168.1.2"/></cfg>')
-    changed, added, removed = compare(flatten(old), flatten(new))
-    assert changed["cfg/WLAN@Channel"] == ("6", "11")
-    assert changed["cfg/WLAN@KeyPassphrase"] == ("(secret)", "(secret changed)")
-    assert "cfg/DHCP@Range" in added
-    assert "cfg/WAN@Enable" in removed
-    # the secret values themselves never appear
-    blob = str((changed, added, removed))
-    assert "oldpw" not in blob and "newpw" not in blob
-    print("selftest ok")
-
-
 if __name__ == "__main__":
-    if "--selftest" in sys.argv:
-        _selftest()
-        raise SystemExit(0)
     if len(sys.argv) != 3:
         print(__doc__)
         raise SystemExit(1)
