@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for decrypt_dn8245v.py — run with:  python3 test_decrypt.py
+Tests for decrypt_dn8245v.py — run with:  python3 tests/test_decrypt.py
 
 No pytest dependency (matches the repo's minimal footprint). Uses only
 synthetic data plus one real header block that decodes to a public ISP
@@ -156,8 +156,8 @@ def test_lying_block_length_rejected():
     _expect_container_error(data)
 
 
-def test_wrong_key_rejected():
-    # valid container, then corrupt the ciphertext so the derived key can't inflate it
+def test_corrupted_ciphertext_rejected():
+    # key is correct; a flipped ciphertext byte makes the AES output un-gzippable
     data = bytearray(build_container(b"<x/>", b"KEY"))
     data[-40] ^= 0xFF                                   # flip a ciphertext byte (before HMAC)
     _expect_container_error(bytes(data))
